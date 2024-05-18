@@ -1,0 +1,67 @@
+version: '3.3'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: pub-sub-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - pub-sub-redis-volume:/data
+    networks:
+      - main
+  notifier:
+    build:
+      context: ./notifier
+      dockerfile: Dockerfile
+    container_name: pub-sub-notifier
+    restart: always
+    volumes:
+      - ./notifier:/app/
+    ports:
+      - "8001:8001"
+    networks:
+      - main
+    depends_on:
+      - redis
+    command: bash -c "python3 manage.py runserver 0.0.0.0:8001"
+    env_file:
+      - notifier/.env
+  sockets:
+    build:
+      context: ./sockets
+      dockerfile: Dockerfile
+    container_name: pub-sub-sockets
+    restart: always
+    volumes:
+      - ./sockets:/app/
+    ports:
+      - "8002:8000"
+    networks:
+      - main
+    depends_on:
+      - redis
+    command: bash -c "uvicorn main:app --reload --host 0.0.0.0"
+  postgres:
+    image: postgres:latest
+    container_name: pub-sub-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: notifier
+    ports:
+      - "5434:5432"
+    volumes:
+      - pub-sub-postgres-volume:/var/lib/postgresql/data
+    networks:
+      - main
+
+networks:
+  main: 
+    driver: bridge
+
+
+  
+volumes:
+  pub-sub-redis-volume:
+  pub-sub-postgres-volume:
