@@ -1,0 +1,4 @@
+REDIS_HOSTNAME = 'redis'
+REDIS_PORT = 6379
+
+DEFAULT_CHANNEL = "notifications"
